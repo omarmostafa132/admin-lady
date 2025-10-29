@@ -1,1 +1,1750 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lady Store - Admin Panel</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-database-compat.js"></script>
+    <!-- Chart.js for analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @font-face {
+            font-family: 'LadyStore';
+            src: url('https://fonts.cdnfonts.com/css/aeonik') format('woff2');
+            font-weight: normal;
+            font-style: normal;
+        }
+        
+        :root {
+            --primary-text: #000000;
+            --secondary-text: #555555;
+            --accent-color: #000000;
+            --bg-color: #FFFFFF;
+            --card-bg: #F5F5F5;
+            --border-color: #DDDDDD;
+            --discount-color: #FF6B6B;
+            --link-color: #1DA1F2;
+            --primary-color: #FFFFFF;
+            --secondary-color: #000000;
+            --blue-color: #1e90ff;
+            --instagram-color: #E1306C;
+            --facebook-color: #1877F2;
+            --whatsapp-color: #25D366;
+            --sold-out-color: rgba(0, 0, 0, 0.5);
+            --header-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            --success-color: #4CAF50;
+            --warning-color: #FFC107;
+            --pending-color: #FF9800;
+            --processing-color: #2196F3;
+            --shipped-color: #673AB7;
+            --delivered-color: #4CAF50;
+            --cancelled-color: #F44336;
+            --admin-color: #6a1b9a;
+            --analytics-color-1: #4e73df;
+            --analytics-color-2: #1cc88a;
+            --analytics-color-3: #36b9cc;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Tajawal', sans-serif;
+            transition: all 0.3s ease;
+        }
+        
+        body {
+            background-color: var(--bg-color);
+            color: var(--primary-text);
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        /* Header */
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            margin-bottom: 30px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .admin-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .logo-img {
+            height: 40px;
+        }
+        
+        .admin-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+        
+        .logout-btn {
+            background-color: var(--discount-color);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        
+        /* Admin Container */
+        .admin-container {
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            width: 100%;
+            max-height: calc(100vh - 150px);
+            overflow-y: auto;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .admin-tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+            flex-wrap: wrap;
+        }
+        
+        .admin-tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+        
+        .admin-tab.active {
+            border-bottom-color: var(--admin-color);
+            color: var(--admin-color);
+            font-weight: 600;
+        }
+        
+        .admin-tab-content {
+            display: none;
+        }
+        
+        .admin-tab-content.active {
+            display: block;
+        }
+        
+        /* Orders Tab */
+        .admin-orders-list {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        
+        .admin-order-item {
+            background-color: var(--bg-color);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .admin-order-status {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .admin-order-status select {
+            padding: 5px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .admin-order-status button {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            background-color: var(--admin-color);
+            color: white;
+            cursor: pointer;
+        }
+        
+        .admin-order-actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+        
+        .admin-delete-order-btn {
+            background-color: var(--discount-color);
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        /* Products Tab */
+        .admin-product-form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .admin-product-form input,
+        .admin-product-form textarea,
+        .admin-product-form select {
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+        }
+        
+        .admin-product-form textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        
+        .admin-product-images {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .admin-product-image {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 5px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .admin-form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .admin-form-actions button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        .admin-save-btn {
+            background-color: var(--admin-color);
+            color: white;
+        }
+        
+        .admin-cancel-btn {
+            background-color: var(--border-color);
+        }
+        
+        .admin-product-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .admin-product-card {
+            background-color: var(--bg-color);
+            border-radius: 8px;
+            padding: 15px;
+            border: 1px solid var(--border-color);
+            position: relative;
+        }
+        
+        .admin-product-image {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        
+        .admin-product-actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+        
+        .admin-product-actions button {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .admin-edit-btn {
+            background-color: var(--blue-color);
+            color: white;
+        }
+        
+        .admin-delete-btn {
+            background-color: var(--discount-color);
+            color: white;
+        }
+        
+        /* Categories Tab */
+        .category-management {
+            margin-top: 20px;
+        }
+        
+        .category-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .category-card {
+            background-color: var(--bg-color);
+            border-radius: 8px;
+            padding: 15px;
+            border: 1px solid var(--border-color);
+            position: relative;
+        }
+        
+        .category-card h4 {
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .category-name {
+            font-weight: 600;
+        }
+        
+        .product-count-badge {
+            background-color: var(--admin-color);
+            color: white;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        
+        .category-actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+        
+        /* Analytics Tab */
+        .analytics-chart {
+            margin: 20px 0;
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+        
+        .analytics-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .analytics-card {
+            background-color: var(--bg-color);
+            border-radius: 8px;
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            text-align: center;
+        }
+        
+        .analytics-card h3 {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            color: var(--secondary-text);
+        }
+        
+        .analytics-card .value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        
+        .analytics-card .change {
+            font-size: 0.9rem;
+        }
+        
+        .analytics-card.primary {
+            background-color: var(--analytics-color-1);
+            color: white;
+        }
+        
+        .analytics-card.success {
+            background-color: var(--analytics-color-2);
+            color: white;
+        }
+        
+        .analytics-card.info {
+            background-color: var(--analytics-color-3);
+            color: white;
+        }
+        
+        /* Image Upload */
+        .image-upload-container {
+            margin: 15px 0;
+        }
+        
+        .image-upload-btn {
+            display: inline-block;
+            padding: 10px 15px;
+            background-color: var(--blue-color);
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+        
+        .image-upload-btn:hover {
+            background-color: #1a7fdd;
+        }
+        
+        .image-preview {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 5px;
+            border: 1px solid var(--border-color);
+            margin-top: 10px;
+            display: none;
+        }
+        
+        /* Custom Notification */
+        .custom-notification {
+            position: fixed;
+            top: 22px;
+            left: 22px;
+            background-color: var(--card-bg);
+            color: var(--primary-text);
+            padding: 16.5px;
+            border-radius: 8.8px;
+            box-shadow: 0 4.4px 13.2px rgba(0, 0, 0, 0.15);
+            z-index: 1100;
+            display: flex;
+            align-items: center;
+            gap: 11px;
+            transform: translateX(-150%);
+            transition: transform 0.3s ease;
+            border: 1px solid var(--border-color);
+        }
+        
+        .custom-notification.show {
+            transform: translateX(0);
+        }
+        
+        .custom-notification i {
+            font-size: 1.32rem;
+        }
+        
+        /* Order Details Modal */
+        .order-details-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            width: 100%;
+            max-width: 440px;
+            background-color: var(--card-bg);
+            box-shadow: 2.2px 0 11px rgba(0, 0, 0, 0.1);
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid var(--border-color);
+        }
+        
+        .order-details-modal.open {
+            transform: translateX(0);
+        }
+        
+        .order-details-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.65rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .order-details-title {
+            font-size: 1.65rem;
+            font-weight: 600;
+            color: var(--primary-text);
+        }
+        
+        .close-order-details {
+            background: none;
+            border: none;
+            font-size: 1.65rem;
+            cursor: pointer;
+            color: var(--primary-text);
+            transition: transform 0.3s;
+        }
+        
+        .close-order-details:hover {
+            transform: rotate(90deg) scale(1.1);
+        }
+        
+        .order-details-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.1rem;
+        }
+        
+        .order-customer-info {
+            background-color: var(--bg-color);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .customer-info-title {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: var(--accent-color);
+        }
+        
+        .customer-info-item {
+            margin-bottom: 5px;
+        }
+        
+        .order-items-list {
+            margin-top: 15px;
+        }
+        
+        .order-item-details {
+            display: flex;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .order-item-image {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 5px;
+            margin-right: 10px;
+        }
+        
+        .order-item-info {
+            flex: 1;
+        }
+        
+        .order-item-name {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .order-item-price {
+            color: var(--secondary-text);
+            margin-bottom: 5px;
+        }
+        
+        .order-status {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        
+        .order-status.pending {
+            background-color: var(--pending-color);
+            color: white;
+        }
+        
+        .order-status.processing {
+            background-color: var(--processing-color);
+            color: white;
+        }
+        
+        .order-status.shipped {
+            background-color: var(--shipped-color);
+            color: white;
+        }
+        
+        .order-status.delivered {
+            background-color: var(--delivered-color);
+            color: white;
+        }
+        
+        .order-status.cancelled {
+            background-color: var(--cancelled-color);
+            color: white;
+        }
+        
+        .order-total {
+            font-weight: 600;
+            margin: 10px 0;
+        }
+        
+        /* Overlay */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s;
+        }
+        
+        .overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Feedback Tab */
+        .feedback-upload-container {
+            margin: 20px 0;
+        }
+
+        .feedback-images-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .feedback-image-card {
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        .feedback-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+
+        .feedback-image-actions {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .feedback-delete-btn {
+            background-color: var(--discount-color);
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <!-- Admin Header -->
+    <div class="admin-header">
+        <div class="admin-logo">
+            <img src="https://i.postimg.cc/qqqVm7JB/Chat-GPT-Image-Jul-11-2025-02-38-42-PM.png" alt="Lady Store Logo" class="logo-img">
+            <h1 class="admin-title">Lady Store Admin</h1>
+        </div>
+        <button class="logout-btn" id="logoutBtn">
+            <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
+    </div>
+    
+    <!-- Admin Container -->
+    <div class="container">
+        <div class="admin-container">
+            <div class="admin-tabs">
+                <div class="admin-tab active" data-tab="orders">Orders</div>
+                <div class="admin-tab" data-tab="products">Products</div>
+                <div class="admin-tab" data-tab="add-product">Add Product</div>
+                <div class="admin-tab" data-tab="categories">Categories</div>
+                <div class="admin-tab" data-tab="analytics">Analytics</div>
+                <div class="admin-tab" data-tab="feedback">Feedback</div>
+            </div>
+            
+            <div class="admin-tab-content active" id="orders-tab">
+                <h3>Orders Management</h3>
+                <div class="admin-orders-list" id="adminOrdersList">
+                    <!-- Orders will be loaded here -->
+                </div>
+            </div>
+            
+            <div class="admin-tab-content" id="products-tab">
+                <h3>Products Management</h3>
+                <div class="admin-product-list" id="adminProductList">
+                    <!-- Products will be loaded here -->
+                </div>
+            </div>
+            
+            <div class="admin-tab-content" id="add-product-tab">
+                <h3>Add New Product</h3>
+                <form class="admin-product-form" id="adminProductForm">
+                    <div>
+                        <label>Category</label>
+                        <select id="adminProductCategory" required>
+                            <!-- Categories will be populated dynamically -->
+                        </select>
+                    </div>
+                    <div>
+                        <label>Product Name</label>
+                        <input type="text" id="adminProductName" required>
+                    </div>
+                    <div>
+                        <label>Description</label>
+                        <textarea id="adminProductDescription" required></textarea>
+                    </div>
+                    <div>
+                        <label>Price (EGP)</label>
+                        <input type="number" id="adminProductPrice" required>
+                    </div>
+                    <div>
+                        <label>Old Price (EGP) - Optional</label>
+                        <input type="number" id="adminProductOldPrice">
+                    </div>
+                    <div>
+                        <label>Discount - Optional</label>
+                        <input type="text" id="adminProductDiscount" placeholder="e.g. 20% OFF">
+                    </div>
+                    <div>
+                        <label>Sizes - Optional</label>
+                        <input type="text" id="adminProductSizes" placeholder="e.g. S, M, L, XL">
+                    </div>
+                    <div>
+                        <label>Colors - Optional</label>
+                        <input type="text" id="adminProductColors" placeholder="e.g. Red, Blue, Black">
+                    </div>
+                    <div class="image-upload-container">
+                        <label>Upload Image</label>
+                        <div class="image-upload-btn" id="uploadImageBtn">
+                            <i class="fas fa-upload"></i> Select Image
+                        </div>
+                        <input type="file" id="imageUploadInput" style="display: none;" accept="image/*">
+                        <img id="imagePreview" class="image-preview">
+                        <textarea id="adminProductImages" placeholder="Or paste image URLs (one per line)" style="margin-top: 10px;"></textarea>
+                    </div>
+                    <div>
+                        <label>
+                            <input type="checkbox" id="adminProductSoldOut"> Sold Out
+                        </label>
+                    </div>
+                    <div class="admin-form-actions">
+                        <button type="button" class="admin-cancel-btn" onclick="resetProductForm()">Reset</button>
+                        <button type="submit" class="admin-save-btn">Save Product</button>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="admin-tab-content" id="categories-tab">
+                <h3>Category Management</h3>
+                <form id="addCategoryForm" style="margin-bottom: 20px;">
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="newCategoryName" placeholder="New category name" required style="flex: 1;">
+                        <button type="submit" style="padding: 10px 15px; background-color: var(--admin-color); color: white; border: none; border-radius: 5px; cursor: pointer;">Add Category</button>
+                    </div>
+                </form>
+                <div class="category-management">
+                    <h4>Existing Categories</h4>
+                    <div class="category-list" id="categoryList">
+                        <!-- Categories will be loaded here -->
+                    </div>
+                </div>
+            </div>
+            
+            <div class="admin-tab-content" id="analytics-tab">
+                <h3>Store Analytics</h3>
+                
+                <div class="analytics-cards">
+                    <div class="analytics-card primary">
+                        <h3>Total Sales</h3>
+                        <div class="value" id="totalSales">0 EGP</div>
+                        <div class="change" id="salesChange">+0% from last month</div>
+                    </div>
+                    <div class="analytics-card success">
+                        <h3>Total Orders</h3>
+                        <div class="value" id="totalOrders">0</div>
+                        <div class="change" id="ordersChange">+0% from last month</div>
+                    </div>
+                    <div class="analytics-card info">
+                        <h3>Top Product</h3>
+                        <div class="value" id="topProduct">-</div>
+                        <div class="change" id="topProductSales">0 sales</div>
+                    </div>
+                </div>
+                
+                <h4 style="margin-top: 30px;">Sales Overview</h4>
+                <div class="analytics-chart">
+                    <canvas id="salesChart"></canvas>
+                </div>
+                
+                <h4 style="margin-top: 30px;">Top Selling Products</h4>
+                <div class="analytics-chart">
+                    <canvas id="productsChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Feedback Tab -->
+            <div class="admin-tab-content" id="feedback-tab">
+                <h3>Customer Feedback Photos</h3>
+                <div class="feedback-upload-container">
+                    <div class="image-upload-btn" id="uploadFeedbackBtn">
+                        <i class="fas fa-upload"></i> Upload Feedback Photo
+                    </div>
+                    <input type="file" id="feedbackUploadInput" style="display: none;" accept="image/*">
+                    <img id="feedbackPreview" class="image-preview">
+                </div>
+                <div class="feedback-images-grid" id="feedbackImagesGrid">
+                    <!-- Feedback images will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Order Details Modal -->
+    <div class="order-details-modal" id="orderDetailsModal">
+        <div class="order-details-header">
+            <h3 class="order-details-title">Order Details</h3>
+            <button class="close-order-details" id="closeOrderDetails">&times;</button>
+        </div>
+        <div class="order-details-content" id="orderDetailsContent">
+            <!-- Order details will be loaded here -->
+        </div>
+    </div>
+    
+    <!-- Overlay -->
+    <div class="overlay" id="overlay"></div>
+    
+    <!-- Custom Notification -->
+    <div class="custom-notification" id="customNotification">
+        <i class="fas fa-exclamation-circle"></i>
+        <span id="notificationMessage">This product is not available!</span>
+    </div>
+    
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyB_4U1Bk3K8J8Z9Z9Z9Z9Z9Z9Z9Z9Z",
+            authDomain: "test-7d761.firebaseapp.com",
+            databaseURL: "https://lady-store-75b73-default-rtdb.firebaseio.com/",
+            projectId: "test-7d761",
+            storageBucket: "test-7d761.appspot.com",
+            messagingSenderId: "1234567890",
+            appId: "1:1234567890:web:abcdef1234567890"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        // Products Data (will be loaded from Firebase)
+        let products = {};
+        let categories = ['featured']; // Default category
+        let orders = [];
+        let feedbackImages = [];
+        let analyticsData = {};
+        const IMGBB_API_KEY = '989049c2412b623657b8b7e50a771156';
+
+        // DOM Elements
+        const adminOrdersList = document.getElementById('adminOrdersList');
+        const adminProductList = document.getElementById('adminProductList');
+        const adminProductForm = document.getElementById('adminProductForm');
+        const categoryList = document.getElementById('categoryList');
+        const addCategoryForm = document.getElementById('addCategoryForm');
+        const newCategoryName = document.getElementById('newCategoryName');
+        const uploadImageBtn = document.getElementById('uploadImageBtn');
+        const imageUploadInput = document.getElementById('imageUploadInput');
+        const imagePreview = document.getElementById('imagePreview');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const orderDetailsModal = document.getElementById('orderDetailsModal');
+        const orderDetailsContent = document.getElementById('orderDetailsContent');
+        const closeOrderDetailsBtn = document.getElementById('closeOrderDetails');
+        const overlay = document.getElementById('overlay');
+        const customNotification = document.getElementById('customNotification');
+        const notificationMessage = document.getElementById('notificationMessage');
+        const uploadFeedbackBtn = document.getElementById('uploadFeedbackBtn');
+        const feedbackUploadInput = document.getElementById('feedbackUploadInput');
+        const feedbackPreview = document.getElementById('feedbackPreview');
+        const feedbackImagesGrid = document.getElementById('feedbackImagesGrid');
+
+        // Charts
+        let salesChart;
+        let productsChart;
+
+        // Initialize Admin Panel
+        function initAdminPanel() {
+            loadCategoriesFromFirebase();
+            loadProductsFromFirebase();
+            loadOrders();
+            loadFeedbackImages();
+            setupEventListeners();
+        }
+
+        // Load categories from Firebase
+        function loadCategoriesFromFirebase() {
+            database.ref('categories').on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data && Array.isArray(data)) {
+                    categories = ['featured', ...data]; // Always keep 'featured' as first category
+                    populateCategoryDropdown();
+                    renderAdminCategories();
+                } else {
+                    // Initialize with default categories if none exist
+                    database.ref('categories').set([]);
+                }
+            });
+        }
+
+        // Load products from Firebase
+        function loadProductsFromFirebase() {
+            database.ref('products').on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    products = data;
+                    renderAdminProducts();
+                    renderAdminCategories(); // Refresh category counts
+                    calculateAnalytics();
+                } else {
+                    // Initialize with empty data if no products exist
+                    const initialProducts = {};
+                    categories.forEach(cat => {
+                        initialProducts[cat] = [];
+                    });
+                    database.ref('products').set(initialProducts);
+                }
+            });
+        }
+
+        // Load orders from Firebase
+        function loadOrders() {
+            database.ref('orders').on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    // Convert object to array and include Firebase keys
+                    orders = Object.entries(data).map(([key, value]) => ({ ...value, firebaseKey: key }));
+                    renderAdminOrders();
+                    calculateAnalytics();
+                } else {
+                    // Initialize with empty data if no orders exist
+                    database.ref('orders').set([]);
+                }
+            });
+        }
+
+        // Load feedback images from Firebase
+        function loadFeedbackImages() {
+            database.ref('feedback').on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    feedbackImages = Array.isArray(data) ? data : [];
+                    renderFeedbackImages();
+                } else {
+                    // Initialize with empty array if no feedback exists
+                    database.ref('feedback').set([]);
+                }
+            });
+        }
+
+        // Render feedback images
+        function renderFeedbackImages() {
+            feedbackImagesGrid.innerHTML = feedbackImages.map((image, index) => `
+                <div class="feedback-image-card">
+                    <img src="${image}" alt="Feedback image ${index + 1}" class="feedback-image">
+                    <div class="feedback-image-actions">
+                        <button class="feedback-delete-btn" onclick="deleteFeedbackImage(${index})">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Upload image to ImgBB
+        function uploadImage(file) {
+            const formData = new FormData();
+            formData.append('key', IMGBB_API_KEY);
+            formData.append('image', file);
+            
+            return fetch('https://api.imgbb.com/1/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    return data.data.url;
+                } else {
+                    throw new Error('Image upload failed: ' + (data.error?.message || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                console.error('Upload error:', error);
+                throw new Error('Failed to upload image: ' + error.message);
+            });
+        }
+
+        // Upload feedback image
+        function uploadFeedbackImage(file) {
+            return uploadImage(file); // Reuse the same upload function
+        }
+
+        // Add feedback image
+        function addFeedbackImage(url) {
+            const updatedFeedback = [...feedbackImages, url];
+            
+            database.ref('feedback').set(updatedFeedback)
+                .then(() => {
+                    showNotification('Feedback image added successfully');
+                    feedbackPreview.style.display = 'none';
+                })
+                .catch(error => {
+                    showNotification('Error adding feedback image: ' + error.message);
+                });
+        }
+
+        // Delete feedback image
+        function deleteFeedbackImage(index) {
+            if (!confirm('Are you sure you want to delete this feedback image?')) return;
+            
+            const updatedFeedback = feedbackImages.filter((_, i) => i !== index);
+            
+            database.ref('feedback').set(updatedFeedback)
+                .then(() => {
+                    showNotification('Feedback image deleted successfully');
+                })
+                .catch(error => {
+                    showNotification('Error deleting feedback image: ' + error.message);
+                });
+        }
+
+        // Calculate analytics data
+        function calculateAnalytics() {
+            // Calculate total sales
+            const totalSales = orders.reduce((sum, order) => {
+                if (order.status === 'cancelled') return sum;
+                const orderTotal = parseFloat(order.total.replace(/[^0-9.]/g, ''));
+                return sum + (isNaN(orderTotal) ? 0 : orderTotal);
+            }, 0);
+            
+            // Count total orders (excluding cancelled)
+            const totalOrders = orders.filter(order => order.status !== 'cancelled').length;
+            
+            // Find top selling products (excluding cancelled orders)
+            const productSales = {};
+            orders.forEach(order => {
+                if (order.status === 'cancelled') return;
+                
+                order.items.forEach(item => {
+                    if (!productSales[item.name]) {
+                        productSales[item.name] = 0;
+                    }
+                    productSales[item.name] += item.quantity;
+                });
+            });
+            
+            let topProduct = '-';
+            let topProductSalesCount = 0;
+            for (const [product, sales] of Object.entries(productSales)) {
+                if (sales > topProductSalesCount) {
+                    topProduct = product;
+                    topProductSalesCount = sales;
+                }
+            }
+            
+            // Calculate sales by month (excluding cancelled orders)
+            const monthlySales = {};
+            const now = new Date();
+            const currentMonth = now.getMonth();
+            const currentYear = now.getFullYear();
+            
+            // Initialize last 6 months
+            for (let i = 5; i >= 0; i--) {
+                const date = new Date(currentYear, currentMonth - i, 1);
+                const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                monthlySales[monthKey] = 0;
+            }
+            
+            orders.forEach(order => {
+                if (order.status === 'cancelled') return;
+                
+                const orderDate = new Date(order.date);
+                const monthKey = `${orderDate.getFullYear()}-${String(orderDate.getMonth() + 1).padStart(2, '0')}`;
+                
+                if (monthlySales.hasOwnProperty(monthKey)) {
+                    const orderTotal = parseFloat(order.total.replace(/[^0-9.]/g, ''));
+                    monthlySales[monthKey] += isNaN(orderTotal) ? 0 : orderTotal;
+                }
+            });
+            
+            // Prepare data for charts
+            const salesLabels = Object.keys(monthlySales).map(key => {
+                const [year, month] = key.split('-');
+                return new Date(year, month - 1).toLocaleString('default', { month: 'short', year: 'numeric' });
+            });
+            
+            const salesValues = Object.values(monthlySales);
+            
+            const productLabels = Object.keys(productSales).slice(0, 5);
+            const productValues = productLabels.map(label => productSales[label]);
+            
+            // Update analytics data
+            analyticsData = {
+                totalSales,
+                totalOrders,
+                topProduct,
+                topProductSalesCount,
+                monthlySales,
+                productSales,
+                salesLabels,
+                salesValues,
+                productLabels,
+                productValues
+            };
+            
+            renderAnalytics();
+        }
+
+        // Render analytics data
+        function renderAnalytics() {
+            // Update cards
+            document.getElementById('totalSales').textContent = `${analyticsData.totalSales.toLocaleString()} EGP`;
+            document.getElementById('totalOrders').textContent = analyticsData.totalOrders;
+            document.getElementById('topProduct').textContent = analyticsData.topProduct;
+            document.getElementById('topProductSales').textContent = `${analyticsData.topProductSalesCount} sales`;
+            
+            // Calculate percentage changes (simplified - would normally compare to previous period)
+            const salesChange = analyticsData.totalSales > 0 ? 100 : 0;
+            const ordersChange = analyticsData.totalOrders > 0 ? 100 : 0;
+            
+            document.getElementById('salesChange').textContent = `+${salesChange}% from last month`;
+            document.getElementById('ordersChange').textContent = `+${ordersChange}% from last month`;
+            
+            // Render charts
+            renderCharts();
+        }
+
+        // Render charts
+        function renderCharts() {
+            const salesCtx = document.getElementById('salesChart').getContext('2d');
+            const productsCtx = document.getElementById('productsChart').getContext('2d');
+            
+            // Destroy existing charts if they exist
+            if (salesChart) salesChart.destroy();
+            if (productsChart) productsChart.destroy();
+            
+            // Sales chart
+            salesChart = new Chart(salesCtx, {
+                type: 'line',
+                data: {
+                    labels: analyticsData.salesLabels,
+                    datasets: [{
+                        label: 'Monthly Sales (EGP)',
+                        data: analyticsData.salesValues,
+                        backgroundColor: 'rgba(78, 115, 223, 0.05)',
+                        borderColor: 'rgba(78, 115, 223, 1)',
+                        pointBackgroundColor: 'rgba(78, 115, 223, 1)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgba(78, 115, 223, 1)',
+                        borderWidth: 2,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+            
+            // Products chart
+            productsChart = new Chart(productsCtx, {
+                type: 'bar',
+                data: {
+                    labels: analyticsData.productLabels,
+                    datasets: [{
+                        label: 'Units Sold',
+                        data: analyticsData.productValues,
+                        backgroundColor: 'rgba(28, 200, 138, 0.8)',
+                        borderColor: 'rgba(28, 200, 138, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // Populate category dropdown in admin panel
+        function populateCategoryDropdown() {
+            const dropdown = document.getElementById('adminProductCategory');
+            dropdown.innerHTML = categories.map(category => `
+                <option value="${category}">${category.replace(/-/g, ' ')} (${products[category] ? products[category].length : 0})</option>
+            `).join('');
+        }
+
+        // Render admin categories with product counts
+        function renderAdminCategories() {
+            categoryList.innerHTML = categories.map(category => {
+                const productCount = products[category] ? products[category].length : 0;
+                return `
+                    <div class="category-card">
+                        <h4>
+                            <span class="category-name">${category.replace(/-/g, ' ')}</span>
+                            <span class="product-count-badge">${productCount} products</span>
+                        </h4>
+                        <div class="category-actions">
+                            <button class="admin-edit-btn" onclick="editCategory('${category}')">Edit</button>
+                            ${category !== 'featured' ? `<button class="admin-delete-btn" onclick="deleteCategory('${category}')">Delete</button>` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Add new category
+        function addCategory(e) {
+            e.preventDefault();
+            
+            const categoryName = newCategoryName.value.trim();
+            if (!categoryName) return;
+            
+            // Format category name (replace spaces with dashes, lowercase)
+            const formattedCategory = categoryName.toLowerCase().replace(/\s+/g, '-');
+            
+            if (categories.includes(formattedCategory)) {
+                showNotification('Category already exists');
+                return;
+            }
+            
+            // Add to categories array
+            const updatedCategories = [...categories.slice(1), formattedCategory];
+            
+            // Update Firebase
+            database.ref('categories').set(updatedCategories)
+                .then(() => {
+                    showNotification('Category added successfully');
+                    newCategoryName.value = '';
+                    
+                    // Initialize empty products array for this category
+                    if (!products[formattedCategory]) {
+                        database.ref(`products/${formattedCategory}`).set([]);
+                    }
+                })
+                .catch(error => {
+                    showNotification('Error adding category: ' + error.message);
+                });
+        }
+
+        // Edit category
+        function editCategory(oldCategory) {
+            if (oldCategory === 'featured') return;
+            
+            const newName = prompt('Enter new category name:', oldCategory.replace(/-/g, ' '));
+            if (!newName) return;
+            
+            const newCategory = newName.toLowerCase().replace(/\s+/g, '-');
+            
+            if (categories.includes(newCategory)) {
+                showNotification('Category already exists');
+                return;
+            }
+            
+            // Update categories array
+            const updatedCategories = categories.slice(1).map(cat => 
+                cat === oldCategory ? newCategory : cat
+            );
+            
+            // Update Firebase categories
+            database.ref('categories').set(updatedCategories)
+                .then(() => {
+                    // Update products reference if needed
+                    if (products[oldCategory]) {
+                        const categoryProducts = products[oldCategory];
+                        database.ref('products').update({
+                            [oldCategory]: null,
+                            [newCategory]: categoryProducts
+                        });
+                    }
+                    
+                    showNotification('Category updated successfully');
+                })
+                .catch(error => {
+                    showNotification('Error updating category: ' + error.message);
+                });
+        }
+
+        // Delete category
+        function deleteCategory(category) {
+            if (category === 'featured') return;
+            
+            if (!confirm(`Are you sure you want to delete the "${category.replace(/-/g, ' ')}" category? Products in this category will also be deleted.`)) {
+                return;
+            }
+            
+            // Remove from categories array
+            const updatedCategories = categories.slice(1).filter(cat => cat !== category);
+            
+            // Update Firebase
+            database.ref('categories').set(updatedCategories)
+                .then(() => {
+                    // Remove products for this category
+                    database.ref(`products/${category}`).remove();
+                    showNotification('Category deleted successfully');
+                })
+                .catch(error => {
+                    showNotification('Error deleting category: ' + error.message);
+                });
+        }
+
+        // Render admin orders
+        function renderAdminOrders() {
+            if (orders.length === 0) {
+                adminOrdersList.innerHTML = '<p>No orders found</p>';
+                return;
+            }
+            
+            adminOrdersList.innerHTML = orders.map(order => `
+                <div class="admin-order-item">
+                    <div class="order-header">
+                        <span class="order-id">Order #${order.id.substring(0, 8)}</span>
+                        <span class="order-date">${new Date(order.date).toLocaleDateString()}</span>
+                    </div>
+                    <div class="order-status ${order.status}">
+                        Status: ${order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                    </div>
+                    <div class="customer-info-item"><strong>Customer:</strong> ${order.customer.name}</div>
+                    <div class="customer-info-item"><strong>Phone:</strong> ${order.customer.phone}</div>
+                    <div class="order-total"><strong>Total:</strong> ${order.total}</div>
+                    
+                    <div class="admin-order-status">
+                        <select id="status-${order.firebaseKey}" ${order.status === 'cancelled' ? 'disabled' : ''}>
+                            <option value="pending" ${order.status === 'pending' ? 'selected' : ''}>Pending</option>
+                            <option value="processing" ${order.status === 'processing' ? 'selected' : ''}>Processing</option>
+                            <option value="shipped" ${order.status === 'shipped' ? 'selected' : ''}>Shipped</option>
+                            <option value="delivered" ${order.status === 'delivered' ? 'selected' : ''}>Delivered</option>
+                            <option value="cancelled" ${order.status === 'cancelled' ? 'selected' : ''}>Cancelled</option>
+                        </select>
+                        <button onclick="updateOrderStatus('${order.firebaseKey}')" ${order.status === 'cancelled' ? 'disabled' : ''}>Update</button>
+                    </div>
+                    
+                    <div class="admin-order-actions">
+                        <button class="view-order-btn" onclick="viewAdminOrderDetails('${order.id}')">View Details</button>
+                        <button class="admin-delete-order-btn" onclick="deleteOrder('${order.firebaseKey}')">Delete Order</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // View admin order details
+        function viewAdminOrderDetails(orderId) {
+            const order = orders.find(o => o.id === orderId);
+            if (!order) return;
+            
+            orderDetailsContent.innerHTML = `
+                <div class="order-customer-info">
+                    <h4 class="customer-info-title">Customer Information</h4>
+                    <div class="customer-info-item"><strong>Name:</strong> ${order.customer.name}</div>
+                    <div class="customer-info-item"><strong>Phone:</strong> ${order.customer.phone}</div>
+                    <div class="customer-info-item"><strong>Governorate:</strong> ${order.customer.governorate}</div>
+                    <div class="customer-info-item"><strong>Address:</strong> ${order.customer.address}</div>
+                    ${order.customer.floor ? `<div class="customer-info-item"><strong>Floor:</strong> ${order.customer.floor}</div>` : ''}
+                    ${order.customer.apartment ? `<div class="customer-info-item"><strong>Apartment:</strong> ${order.customer.apartment}</div>` : ''}
+                    ${order.customer.notes ? `<div class="customer-info-item"><strong>Notes:</strong> ${order.customer.notes}</div>` : ''}
+                </div>
+                
+                <div class="order-items-list">
+                    <h4>Order Items</h4>
+                    ${order.items.map(item => `
+                        <div class="order-item-details">
+                            <img src="${item.image}" alt="${item.name}" class="order-item-image">
+                            <div class="order-item-info">
+                                <div class="order-item-name">${item.name}</div>
+                                <div class="order-item-price">${item.price} EGP</div>
+                                <div class="order-item-price">Quantity: ${item.quantity}</div>
+                                <div class="order-item-price">Color: ${item.color}</div>
+                                <div class="order-item-price">Size: ${item.size}</div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+                
+                <div class="order-total">
+                    Total: ${order.total} EGP
+                </div>
+                
+                <div class="order-status ${order.status}">
+                    Status: ${order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                </div>
+            `;
+            
+            orderDetailsModal.classList.add('open');
+            overlay.classList.add('active');
+        }
+
+        // Update order status
+        function updateOrderStatus(orderKey) {
+            const statusSelect = document.getElementById(`status-${orderKey}`);
+            const newStatus = statusSelect.value;
+            
+            database.ref(`orders/${orderKey}`).update({ status: newStatus })
+                .then(() => {
+                    showNotification('Order status updated successfully');
+                })
+                .catch(error => {
+                    showNotification('Error updating order status: ' + error.message);
+                });
+        }
+
+        // Delete order
+        function deleteOrder(orderKey) {
+            if (!confirm('Are you sure you want to delete this order? This action cannot be undone.')) {
+                return;
+            }
+            
+            database.ref(`orders/${orderKey}`).remove()
+                .then(() => {
+                    showNotification('Order deleted successfully');
+                    // The orders list will automatically update via the Firebase listener
+                    // So no need to manually remove it from the UI
+                    orders = orders.filter(order => order.firebaseKey !== orderKey);
+                    calculateAnalytics(); // Update analytics after deletion
+                    renderAdminOrders(); // Re-render the orders list
+                    renderAnalytics(); // Update analytics display
+                    renderCharts(); // Update charts
+                    document.getElementById('totalSales').textContent = `${analyticsData.totalSales.toLocaleString()} EGP`;
+                    document.getElementById('totalOrders').textContent = analyticsData.totalOrders;
+                    document.getElementById('topProduct').textContent = analyticsData.topProduct;
+                    document.getElementById('topProductSales').textContent = `${analyticsData.topProductSalesCount} sales`;
+                })
+                .catch(error => {
+                    showNotification('Error deleting order: ' + error.message);
+                    console.error('Error deleting order:', error);
+                    // Log the error for debugging
+                    console.error('Firebase error details:', error);
+                });
+        }
+
+        // Render admin products
+        function renderAdminProducts() {
+            // Combine all products from different categories
+            const allProducts = [];
+            for (const category in products) {
+                if (products[category]) {
+                    allProducts.push(...products[category].map(p => ({ ...p, category })));
+                }
+            }
+            
+            if (allProducts.length === 0) {
+                adminProductList.innerHTML = '<p>No products found</p>';
+                return;
+            }
+            
+            adminProductList.innerHTML = allProducts.map(product => `
+                <div class="admin-product-card">
+                    <img src="${product.images[0]}" alt="${product.name}" class="admin-product-image">
+                    <h4>${product.name}</h4>
+                    <p>${product.price} EGP</p>
+                    <p>Category: ${product.category.replace(/-/g, ' ')}</p>
+                    <div class="admin-product-actions">
+                        <button class="admin-edit-btn" onclick="editProduct('${product.id}', '${product.category}')">Edit</button>
+                        <button class="admin-delete-btn" onclick="deleteProduct('${product.id}', '${product.category}')">Delete</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Edit product
+        function editProduct(productId, category) {
+            const product = products[category].find(p => p.id === productId);
+            if (!product) return;
+            
+            // Switch to add product tab
+            document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.admin-tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelector('.admin-tab[data-tab="add-product"]').classList.add('active');
+            document.getElementById('add-product-tab').classList.add('active');
+            
+            // Fill form with product data
+            document.getElementById('adminProductCategory').value = category;
+            document.getElementById('adminProductName').value = product.name;
+            document.getElementById('adminProductDescription').value = product.description;
+            document.getElementById('adminProductPrice').value = product.price;
+            document.getElementById('adminProductOldPrice').value = product.oldPrice || '';
+            document.getElementById('adminProductDiscount').value = product.discount || '';
+            document.getElementById('adminProductSizes').value = product.sizes || '';
+            document.getElementById('adminProductColors').value = product.colors ? product.colors.join(', ') : '';
+            document.getElementById('adminProductImages').value = product.images.join('\n');
+            document.getElementById('adminProductSoldOut').checked = product.soldOut || false;
+            
+            // Add data attributes to form for editing
+            adminProductForm.dataset.editing = 'true';
+            adminProductForm.dataset.productId = productId;
+            adminProductForm.dataset.category = category;
+        }
+
+        // Delete product
+        function deleteProduct(productId, category) {
+            if (!confirm('Are you sure you want to delete this product?')) return;
+            
+            // Remove product from the category array
+            const updatedProducts = products[category].filter(p => p.id !== productId);
+            
+            // Update Firebase
+            database.ref(`products/${category}`).set(updatedProducts)
+                .then(() => {
+                    showNotification('Product deleted successfully');
+                })
+                .catch(error => {
+                    showNotification('Error deleting product: ' + error.message);
+                });
+        }
+
+        // Save product
+        function saveProduct(e) {
+            e.preventDefault();
+            
+            const isEditing = adminProductForm.dataset.editing === 'true';
+            const category = document.getElementById('adminProductCategory').value;
+            const name = document.getElementById('adminProductName').value;
+            const description = document.getElementById('adminProductDescription').value;
+            const price = parseFloat(document.getElementById('adminProductPrice').value);
+            const oldPrice = parseFloat(document.getElementById('adminProductOldPrice').value) || null;
+            const discount = document.getElementById('adminProductDiscount').value || null;
+            const sizes = document.getElementById('adminProductSizes').value || null;
+            const colors = document.getElementById('adminProductColors').value 
+                ? document.getElementById('adminProductColors').value.split(',').map(c => c.trim()) 
+                : null;
+            const images = document.getElementById('adminProductImages').value.split('\n').filter(url => url.trim() !== '');
+            const soldOut = document.getElementById('adminProductSoldOut').checked;
+            
+            if (!name || !description || !price || images.length === 0) {
+                showNotification('Please fill all required fields');
+                return;
+            }
+            
+            const productData = {
+                id: isEditing ? adminProductForm.dataset.productId : generateId(),
+                name,
+                description,
+                price,
+                oldPrice,
+                discount,
+                sizes,
+                colors,
+                images,
+                soldOut
+            };
+            
+            if (isEditing) {
+                // Editing existing product - need to check if category changed
+                const oldCategory = adminProductForm.dataset.category;
+                
+                if (oldCategory === category) {
+                    // Same category - just update the product
+                    const productIndex = products[category].findIndex(p => p.id === productData.id);
+                    if (productIndex !== -1) {
+                        products[category][productIndex] = productData;
+                    }
+                } else {
+                    // Different category - remove from old, add to new
+                    products[oldCategory] = products[oldCategory].filter(p => p.id !== productData.id);
+                    if (!products[category]) {
+                        products[category] = [];
+                    }
+                    products[category].push(productData);
+                }
+            } else {
+                // New product - add to selected category
+                if (!products[category]) {
+                    products[category] = [];
+                }
+                products[category].push(productData);
+            }
+            
+            // Update Firebase
+            database.ref('products').set(products)
+                .then(() => {
+                    showNotification('Product saved successfully');
+                    resetProductForm();
+                    
+                    // Switch back to products tab
+                    document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.admin-tab-content').forEach(c => c.classList.remove('active'));
+                    document.querySelector('.admin-tab[data-tab="products"]').classList.add('active');
+                    document.getElementById('products-tab').classList.add('active');
+                })
+                .catch(error => {
+                    showNotification('Error saving product: ' + error.message);
+                });
+        }
+
+        // Reset product form
+        function resetProductForm() {
+            adminProductForm.reset();
+            adminProductForm.removeAttribute('data-editing');
+            adminProductForm.removeAttribute('data-product-id');
+            adminProductForm.removeAttribute('data-category');
+            imagePreview.style.display = 'none';
+        }
+
+        // Show Custom Notification
+        function showNotification(message) {
+            notificationMessage.textContent = message;
+            customNotification.classList.add('show');
+            
+            setTimeout(() => {
+                customNotification.classList.remove('show');
+            }, 3000);
+        }
+
+        // Generate ID
+        function generateId() {
+            return 'id-' + Math.random().toString(36).substr(2, 9);
+        }
+
+        // Setup Event Listeners
+        function setupEventListeners() {
+            // Admin tabs switching
+            document.querySelectorAll('.admin-tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    // Remove active class from all tabs and contents
+                    document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.admin-tab-content').forEach(c => c.classList.remove('active'));
+                    
+                    // Add active class to clicked tab and corresponding content
+                    this.classList.add('active');
+                    const tabId = this.getAttribute('data-tab');
+                    document.getElementById(`${tabId}-tab`).classList.add('active');
+                });
+            });
+
+            // Admin product form submission
+            adminProductForm.addEventListener('submit', saveProduct);
+
+            // Add category form submission
+            addCategoryForm.addEventListener('submit', addCategory);
+
+            // Image upload
+            uploadImageBtn.addEventListener('click', function() {
+                imageUploadInput.click();
+            });
+
+            imageUploadInput.addEventListener('change', function() {
+                if (this.files && this.files[0]) {
+                    const file = this.files[0];
+                    
+                    // Show preview
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        imagePreview.src = e.target.result;
+                        imagePreview.style.display = 'block';
+                    };
+                    reader.readAsDataURL(file);
+                    
+                    // Upload to ImgBB
+                    uploadImage(file)
+                        .then(url => {
+                            const imagesTextarea = document.getElementById('adminProductImages');
+                            if (imagesTextarea.value) {
+                                imagesTextarea.value += '\n' + url;
+                            } else {
+                                imagesTextarea.value = url;
+                            }
+                            showNotification('Image uploaded successfully');
+                        })
+                        .catch(error => {
+                            showNotification('Error uploading image: ' + error.message);
+                        });
+                }
+            });
+
+            // Feedback image upload
+            uploadFeedbackBtn.addEventListener('click', function() {
+                feedbackUploadInput.click();
+            });
+
+            feedbackUploadInput.addEventListener('change', function() {
+                if (this.files && this.files[0]) {
+                    const file = this.files[0];
+                    
+                    // Show preview
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        feedbackPreview.src = e.target.result;
+                        feedbackPreview.style.display = 'block';
+                    };
+                    reader.readAsDataURL(file);
+                    
+                    // Upload to ImgBB
+                    uploadFeedbackImage(file)
+                        .then(url => {
+                            addFeedbackImage(url);
+                        })
+                        .catch(error => {
+                            showNotification('Error uploading feedback image: ' + error.message);
+                        });
+                }
+            });
+
+            // Close order details
+            closeOrderDetailsBtn.addEventListener('click', function() {
+                orderDetailsModal.classList.remove('open');
+                overlay.classList.remove('active');
+            });
+
+            // Overlay click
+            overlay.addEventListener('click', function() {
+                orderDetailsModal.classList.remove('open');
+                overlay.classList.remove('active');
+            });
+
+            // Logout button
+            logoutBtn.addEventListener('click', function() {
+                // In a real app, you would implement proper logout logic
+                // For this demo, we'll just redirect to the main store
+                window.location.href = 'index.html';
+            });
+        }
+
+        // Initialize Admin Panel
+        initAdminPanel();
+    </script>
+</body>
+</html>
 
